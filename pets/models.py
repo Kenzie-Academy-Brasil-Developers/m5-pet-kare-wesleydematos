@@ -4,7 +4,7 @@ from django.db import models
 class Sex(models.TextChoices):
     MALE = "Male"
     FEMALE = "Female"
-    NOT_INFORMED = "Not Informed"
+    DEFAULT = "Not Informed"
 
 
 class Pet(models.Model):
@@ -14,12 +14,12 @@ class Pet(models.Model):
     sex = models.CharField(
         max_length=20,
         choices=Sex.choices,
-        default=Sex.NOT_INFORMED,
+        default=Sex.DEFAULT,
     )
 
     group = models.ForeignKey(
         "groups.Group",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="pets",
     )
 
