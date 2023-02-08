@@ -4,6 +4,7 @@ from .serializers import PetSerializer
 from groups.models import Group
 from traits.models import Trait
 from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
 
 
 class PetView(APIView, PageNumberPagination):
@@ -47,3 +48,28 @@ class PetView(APIView, PageNumberPagination):
         serializer = PetSerializer(pet_obj)
 
         return Response(serializer.data, 201)
+
+
+class PetDetailView(APIView):
+    def get(self, request: Request, pet_id: int) -> Response:
+
+        pet = get_object_or_404(Pet, id=pet_id)
+        serializer = PetSerializer(pet)
+
+        return Response(serializer.data)
+
+    def patch(self, request: Request, pet_id: int) -> Response:
+        pet = get_object_or_404(Pet, id=pet_id)
+
+        serializer = PetSerializer(pet, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        return Response(serializer.data)
+
+    def delete(self, request: Request, pet_id: int) -> Response:
+        pet = get_object_or_404(Pet, id=pet_id)
+        pet.delete()
+
+        return Response(status=204)
