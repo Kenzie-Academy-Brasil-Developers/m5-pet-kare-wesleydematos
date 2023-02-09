@@ -1,4 +1,5 @@
 from rest_framework.views import APIView, Request, Response
+from django.forms.models import model_to_dict
 from .models import Pet
 from .serializers import PetSerializer
 from groups.models import Group
@@ -10,7 +11,14 @@ from django.shortcuts import get_object_or_404
 class PetView(APIView, PageNumberPagination):
 
     def get(self, request: Request) -> Response:
-        all_pets = Pet.objects.all()
+        trait_param = request.query_params.get('trait')
+
+        if trait_param:
+            trait = Trait.objects.get(name=trait_param)
+            trait_id = model_to_dict(trait)["id"]
+            all_pets = Pet.objects.filter(traits=trait_id)
+        else:
+            all_pets = Pet.objects.all()
 
         result_page = self.paginate_queryset(all_pets, request)
 
