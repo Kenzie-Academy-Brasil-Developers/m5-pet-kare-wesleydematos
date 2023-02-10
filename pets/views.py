@@ -66,18 +66,46 @@ class PetDetailView(APIView):
 
         return Response(serializer.data)
 
+    def delete(self, request: Request, pet_id: int) -> Response:
+        pet = get_object_or_404(Pet, id=pet_id)
+        pet.delete()
+
+        return Response(status=204)
+
     def patch(self, request: Request, pet_id: int) -> Response:
         pet = get_object_or_404(Pet, id=pet_id)
 
         serializer = PetSerializer(pet, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        serializer.save()
+        group_list: dict = serializer.validated_data.pop("group", None)
+        traits_list: dict = serializer.validated_data.pop("traits", None)
+
+        if group_list:
+            group_obj = Group.objects.filter(
+                scientific_name__iexact=group_list["scientific_name"]
+            ).first()
+
+            if not group_obj:
+                group_obj = Group.objects.create(**group_list)
+
+            pet.group = group_obj
+
+        if traits_list:
+            for trait in traits_list:
+                trait_obj = Trait.objects.filter(
+                    name__iexact=trait["name"]
+                ).first()
+
+            if not trait_obj:
+                trait_obj = Trait.objects.create(**trait)
+
+            pet.traits.add(trait_obj)
+
+        for key, value in serializer.validated_data.items():
+            setattr(pet, key, value)
+
+        pet.save()
+        serializer = PetSerializer(pet)
 
         return Response(serializer.data)
-
-    def delete(self, request: Request, pet_id: int) -> Response:
-        pet = get_object_or_404(Pet, id=pet_id)
-        pet.delete()
-
-        return Response(status=204)
